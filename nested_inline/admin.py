@@ -14,7 +14,7 @@ from django.utils.html import escape
 from django.conf import settings
 from django import forms
 from django.contrib.admin.templatetags.admin_static import static
-
+import django
 csrf_protect_m = method_decorator(csrf_protect)
 
 
@@ -180,7 +180,15 @@ class NestedModelAdmin(admin.ModelAdmin):
             if self.all_valid_with_nesting(formsets) and form_validated:
                 self.save_model(request, new_object, form, False)
                 self.save_related(request, form, formsets, False)
-                self.log_addition(request, new_object)
+                args = ()
+                if django.__version__.startswith('1.9'):
+                    add_message = self.construct_change_message(
+                        request, form, formsets, add=True
+                    )
+                    args = (request, new_object, add_message)
+                else: 
+                    args = (request, new_object)
+                self.log_addition(*args)
                 return self.response_add(request, new_object)
         else:
             # Prepare the dict of initial data from the request.
